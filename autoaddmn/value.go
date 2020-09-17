@@ -1,4 +1,4 @@
-package autodmn
+package autoaddmn
 
 import (
 	"fmt"
@@ -7,13 +7,12 @@ import (
 )
 
 var (
-	operator = NewOperator()
-	compare  = NewCompare()
 	inp      = NewInput()
+	compare  = NewCompare()
+	operator = NewOperator()
 )
 
-const TimeFormat = "2006-01-02 15:04:05"
-
+// 值类型
 type ValueType string
 
 const (
@@ -23,85 +22,35 @@ const (
 	OMD ValueType = "mul_date"
 )
 
+// 值结构体
 type Value struct {
-	Name      string      `json:"name"`       // 名称
-	Desc      string      `json:"desc"`       // 描述
-	Slot      string      `json:"slot"`       // 变量标志
+	Slot      AdInfoSlot  `json:"slot"`       // 变量唯一标记, 根据此标记去匹配对应的 AdInfo中的数据
 	Value     interface{} `json:"value"`      // 值
-	ValueType ValueType   `json:"value_type"` //值的类型
+	ValueType ValueType   `json:"value_type"` // 值的类型   ,用来匹配对的类型，减少适配
 }
 
-func NewValue() *Value {
-	return &Value{}
-}
-
-// 规则有效时间
-type AdRuleEnableTime struct {
-	Start string `json:"start"`
-	End   string `json:"end"`
-}
-
-// 继续投放时长
-type AdKeepPutTime struct {
-	Value float64 `json:"value"` // 小时
-}
-
-// 广告起投时长
-type AdLeastTime struct {
-	Value float64 `json:"value"` // 小时
-}
-
-// 广告消耗速度
-type AdSpeedRate struct {
-	Value int `json:"value"` //广告消耗速度
-}
-
-// 广告转化成本
-type AdConvCost struct {
-	Value float64 `json:"value"` //分
-}
-
-// 广告当前出价
-type AdCurCost struct {
-	Value float64 `json:"value"` //分
-}
-
-// 广告曝光速度
-type AdExpoSpeed struct {
-	Value int `json:"value"` //
-}
-
-// 广告当日花费
-type AdDayCost struct {
-	Value float64 `json:"value"` //分
-}
-
-// 广告目标转化率
-type ACR struct {
-	Value float64 `json:"value"` // 百分比
-}
-
-// 账户可用余额
-type Account struct {
-	Value float64 `json:"value"` //分
-}
-
-func (v *Value) Compare(inputs []Input, op ComparisonOperator) (bool, error) {
-	switch v.ValueType {
+// 根据输入比较值
+func (v *Value) Compare(value []interface{}, valueType ValueType, inputs []Input, op ComparisonOperator) (bool, error) {
+	switch valueType {
 	case OI:
-		return v.compareInt(inputs, op)
+		// int
+		return v.compareInt(value, inputs, op)
 	case OF:
-		return v.compareFloat64(inputs, op)
+		// float
+		return v.compareFloat64(value, inputs, op)
 	case OD:
-		return v.compareDate(inputs, op)
+		// 日期
+		return v.compareDate(value, inputs, op)
 	case OMD:
-		return v.compareDate(inputs, op)
+		// 多个日期
+		return v.compareDate(value, inputs, op)
 	default:
 		return false, errors.WithStack(CouldNotParseValueErr)
 	}
 }
 
-func (v *Value) compareDate(inputs []Input, op ComparisonOperator) (bool, error) {
+// 比较日期
+func (v *Value) compareDate(value []interface{}, inputs []Input, op ComparisonOperator) (bool, error) {
 	var flag bool
 	if len(inputs) != 2 {
 		return false, CouldNotCompareDateNotParamsErr
@@ -123,15 +72,11 @@ func (v *Value) compareDate(inputs []Input, op ComparisonOperator) (bool, error)
 		return false, errors.WithStack(fmt.Errorf("input格式化结束时间%w", err))
 	}
 
-	enableTime, err := v.GetValue()
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
-	if len(enableTime) < 1 {
+	if len(value) < 1 {
 		return false, errors.WithStack(CouldNotCompareParseErr)
 	}
 
-	enableTimeStart, ok := enableTime[0].(string)
+	enableTimeStart, ok := value[0].(string)
 	if !ok {
 		return false, errors.WithStack(CouldNotCompareParseErr)
 	}
@@ -139,8 +84,14 @@ func (v *Value) compareDate(inputs []Input, op ComparisonOperator) (bool, error)
 	if err != nil {
 		return false, errors.WithStack(CouldNotCompareParseErr)
 	}
-	if len(enableTime) == 2 {
-		enableTimeEnd, ok := enableTime[1].(string)
+
+	if compare.CompareIsBeforeTime(formattedEnd, formattedStart) {
+		return false, errors.New("结束时间不能小于开始时间")
+	}
+
+	// 如果 注入的值是两个
+	if len(value) == 2 {
+		enableTimeEnd, ok := value[1].(string)
 		if !ok {
 			return false, errors.WithStack(CouldNotCompareParseErr)
 		}
@@ -152,9 +103,6 @@ func (v *Value) compareDate(inputs []Input, op ComparisonOperator) (bool, error)
 		if compare.CompareIsBeforeTime(formattedEnableEnd, formattedEnableStart) {
 			return false, errors.New("结束时间不能小于开始时间")
 		}
-		if compare.CompareIsBeforeTime(formattedEnd, formattedStart) {
-			return false, errors.New("结束时间不能小于开始时间")
-		}
 
 		flag = compare.CompareIsAfterTime(formattedEnableStart, formattedStart) && compare.CompareIsAfterTime(formattedEnd, formattedEnableEnd)
 	} else {
@@ -164,14 +112,10 @@ func (v *Value) compareDate(inputs []Input, op ComparisonOperator) (bool, error)
 	return flag, nil
 }
 
-func (v *Value) compareFloat64(inputs []Input, op ComparisonOperator) (bool, error) {
+// 比较float64类型
+func (v *Value) compareFloat64(value []interface{}, inputs []Input, op ComparisonOperator) (bool, error) {
 	if len(inputs) > 2 || len(inputs) < 1 {
 		return false, ParamsErr
-	}
-
-	value, err := v.GetValue()
-	if err != nil {
-		return false, err
 	}
 	valueTmp, ok := value[0].(float64)
 	if !ok {
@@ -185,6 +129,7 @@ func (v *Value) compareFloat64(inputs []Input, op ComparisonOperator) (bool, err
 	if len(inputs) == 1 {
 		return compare.CompareFloat64(valueTmp, input, op), nil
 	} else {
+		// 多输入个值使用between 判断
 		input2, err := inp.GetFloat64(inputs[1])
 		if err != nil {
 			return false, errors.WithStack(err)
@@ -193,16 +138,14 @@ func (v *Value) compareFloat64(inputs []Input, op ComparisonOperator) (bool, err
 	}
 }
 
-func (v *Value) compareInt(inputs []Input, op ComparisonOperator) (bool, error) {
+// 比较int类型
+func (v *Value) compareInt(value []interface{}, inputs []Input, op ComparisonOperator) (bool, error) {
 	if len(inputs) > 2 || len(inputs) < 1 {
 		return false, errors.WithStack(ParamsErr)
 	}
 
-	value, err := v.GetValue()
-	if err != nil {
-		return false, err
-	}
 	valueTmp, ok := value[0].(int)
+
 	if !ok {
 		return false, errors.WithStack(CouldNotParseValueErr)
 	}
@@ -211,7 +154,7 @@ func (v *Value) compareInt(inputs []Input, op ComparisonOperator) (bool, error) 
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
-
+	// 多输入个值使用between 判断
 	if len(inputs) == 1 {
 		return compare.CompareInt(valueTmp, input, op), nil
 	} else {
@@ -223,31 +166,34 @@ func (v *Value) compareInt(inputs []Input, op ComparisonOperator) (bool, error) 
 	}
 }
 
-func (v *Value) Calc(inputs []Input, op ArithmeticOperator) ([]interface{}, error) {
+// 根据操作符和输入值 计算值，并返回
+func (v *Value) Calc(value []interface{}, valueType ValueType, inputs []Input, op ArithmeticOperator) ([]interface{}, error) {
 	var result []interface{}
-	switch v.ValueType {
+
+	switch valueType {
 	case OI:
-		return v.calcInt(inputs, op)
+		return v.calcInt(value, inputs, op)
 	case OF:
-		return v.calcFloat64(inputs, op)
+		return v.calcFloat64(value, inputs, op)
+	case OD:
+		return v.calcTime(value, inputs, op)
 	case OMD:
-		return v.calcTime(inputs, op)
+		return v.calcTime(value, inputs, op)
 	default:
 		return result, errors.WithStack(UnknownValueTypeErr)
 	}
 }
 
-func (v *Value) calcTime(inputs []Input, op ArithmeticOperator) ([]interface{}, error) {
+// 计算时间
+func (v *Value) calcTime(value []interface{}, inputs []Input, op ArithmeticOperator) ([]interface{}, error) {
 	var result []interface{}
 	if len(inputs) != 1 {
 		return result, ParamsErr
 	}
 	// 增加的以分钟为单位
-	input := time.Duration(inputs[0].Value.(int))
-
-	value, err := v.GetValue()
+	input, err := inp.GetInt(inputs[0])
 	if err != nil {
-		return result, err
+		return result, errors.WithStack(err)
 	}
 
 	if len(value) != 2 {
@@ -263,25 +209,23 @@ func (v *Value) calcTime(inputs []Input, op ArithmeticOperator) ([]interface{}, 
 		if err != nil {
 			return result, errors.Wrap(err, err.Error())
 		}
-		start = tmpStart.Add(time.Minute * input).Format(TimeFormat)
-
+		start = operator.AddTime(tmpStart, input).Format(TimeFormat)
 		tmpEnd, err := time.Parse(TimeFormat, end)
 		if err != nil {
 			return result, errors.Wrap(err, err.Error())
 		}
-		end = tmpEnd.Add(time.Minute * input).Format(TimeFormat)
+		end = operator.AddTime(tmpEnd, input).Format(TimeFormat)
 	case SUB:
 		tmpStart, err := time.Parse(TimeFormat, start)
 		if err != nil {
 			return result, errors.Wrap(err, err.Error())
 		}
-		start = tmpStart.Add(-time.Minute * input).Format(TimeFormat)
-
+		start = operator.SubTime(tmpStart, input).Format(TimeFormat)
 		tmpEnd, err := time.Parse(TimeFormat, end)
 		if err != nil {
 			return result, errors.Wrap(err, err.Error())
 		}
-		end = tmpEnd.Add(-time.Minute * input).Format(TimeFormat)
+		end = operator.SubTime(tmpEnd, input).Format(TimeFormat)
 	default:
 		return result, errors.WithStack(UnknownArithmeticOperatorErr)
 	}
@@ -290,7 +234,8 @@ func (v *Value) calcTime(inputs []Input, op ArithmeticOperator) ([]interface{}, 
 	return result, nil
 }
 
-func (v *Value) calcFloat64(inputs []Input, op ArithmeticOperator) ([]interface{}, error) {
+// 计算float
+func (v *Value) calcFloat64(value []interface{}, inputs []Input, op ArithmeticOperator) ([]interface{}, error) {
 	var result []interface{}
 	if len(inputs) != 1 {
 		return result, ParamsErr
@@ -300,10 +245,6 @@ func (v *Value) calcFloat64(inputs []Input, op ArithmeticOperator) ([]interface{
 		return result, errors.WithStack(err)
 	}
 
-	value, err := v.GetValue()
-	if err != nil {
-		return result, errors.WithStack(err)
-	}
 	valueTmp, ok := value[0].(float64)
 	if !ok {
 		return result, errors.WithStack(CouldNotParseValueErr)
@@ -322,16 +263,13 @@ func (v *Value) calcFloat64(inputs []Input, op ArithmeticOperator) ([]interface{
 	return result, nil
 }
 
-func (v *Value) calcInt(inputs []Input, op ArithmeticOperator) ([]interface{}, error) {
+// 计算int
+func (v *Value) calcInt(value []interface{}, inputs []Input, op ArithmeticOperator) ([]interface{}, error) {
 	var result []interface{}
 	if len(inputs) != 1 {
 		return result, errors.WithStack(ParamsErr)
 	}
 
-	value, err := v.GetValue()
-	if err != nil {
-		return result, errors.WithStack(err)
-	}
 	valueTmp, ok := value[0].(int)
 	if !ok {
 		return result, errors.WithStack(CouldNotParseValueErr)
@@ -359,85 +297,4 @@ func (v *Value) calcInt(inputs []Input, op ArithmeticOperator) ([]interface{}, e
 		return result, errors.WithStack(UnknownArithmeticOperatorErr)
 	}
 	return result, nil
-}
-
-func (v *Value) SetValue(value []interface{}) (interface{}, error) {
-	var result interface{}
-	switch t := v.Value.(type) {
-	case AdRuleEnableTime:
-		result = AdRuleEnableTime{
-			Start: value[0].(string),
-			End:   value[1].(string),
-		}
-	case AdKeepPutTime:
-		result = AdKeepPutTime{
-			Value: value[0].(float64),
-		}
-	case AdLeastTime:
-		result = AdLeastTime{
-			Value: value[0].(float64),
-		}
-	case AdConvCost:
-		result = AdConvCost{
-			Value: value[0].(float64),
-		}
-	case AdCurCost:
-		result = AdCurCost{
-			Value: value[0].(float64),
-		}
-	case AdDayCost:
-		result = AdDayCost{
-			Value: value[0].(float64),
-		}
-	case ACR:
-		result = ACR{
-			Value: value[0].(float64),
-		}
-	case Account:
-		result = Account{
-			Value: value[0].(float64),
-		}
-	case AdSpeedRate:
-		result = AdSpeedRate{
-			Value: value[0].(int),
-		}
-	case AdExpoSpeed:
-		result = AdExpoSpeed{
-			Value: value[0].(int),
-		}
-	default:
-		return result, errors.WithStack(fmt.Errorf("未知的类型:%t", t))
-	}
-	return result, nil
-}
-
-func (v *Value) GetValue() ([]interface{}, error) {
-	var value []interface{}
-	var err error
-	switch t := v.Value.(type) {
-	case AdRuleEnableTime:
-		value = append(value, v.Value.(AdRuleEnableTime).Start)
-		value = append(value, v.Value.(AdRuleEnableTime).End)
-	case AdKeepPutTime:
-		value = append(value, v.Value.(AdKeepPutTime).Value)
-	case AdLeastTime:
-		value = append(value, v.Value.(AdLeastTime).Value)
-	case AdConvCost:
-		value = append(value, v.Value.(AdConvCost).Value)
-	case AdCurCost:
-		value = append(value, v.Value.(AdCurCost).Value)
-	case AdDayCost:
-		value = append(value, v.Value.(AdDayCost).Value)
-	case ACR:
-		value = append(value, v.Value.(ACR).Value)
-	case Account:
-		value = append(value, v.Value.(Account).Value)
-	case AdSpeedRate:
-		value = append(value, v.Value.(AdSpeedRate).Value)
-	case AdExpoSpeed:
-		value = append(value, v.Value.(AdExpoSpeed).Value)
-	default:
-		err = fmt.Errorf("未知的类型:%t", t)
-	}
-	return value, errors.WithStack(err)
 }
