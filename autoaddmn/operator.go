@@ -1,6 +1,8 @@
 package autoaddmn
 
 import (
+	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -23,6 +25,8 @@ type ArithmeticOperator string
 const (
 	ADD ArithmeticOperator = "+"
 	SUB ArithmeticOperator = "-"
+	Mul ArithmeticOperator = "*"
+	Div ArithmeticOperator = "/"
 	Per ArithmeticOperator = "%"
 )
 
@@ -68,6 +72,24 @@ func (o Operator) SubInt(a, b int) int {
 
 func (o Operator) SubFloat64(a, b float64) float64 {
 	return a - b
+}
+
+// 乘法
+func (o Operator) MulInt(a, b int) int {
+	return a * b
+}
+
+func (o Operator) MulFloat64(a, b float64) float64 {
+	return a * b
+}
+
+func (o Operator) DivFloat64(a, b float64) float64 {
+	if b == 0 {
+		return 0
+	}
+	value := a / b
+	value, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", value), 64)
+	return value
 }
 
 // 百分比

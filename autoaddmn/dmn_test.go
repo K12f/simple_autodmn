@@ -2,6 +2,7 @@ package autoaddmn
 
 import (
 	"fmt"
+	"github.com/gogf/gf/encoding/gjson"
 	"testing"
 )
 
@@ -42,12 +43,22 @@ func TestRules(t *testing.T) {
 
 	ad.AdRule = adrule
 
+	j, _ := gjson.Encode(ad)
+
+	fmt.Println(string(j))
 	//4. 开始解析
 	kernel := NewKernel()
 	err := kernel.Startup(ad)
 	if err != nil {
 		fmt.Println(err)
 	}
+	fmt.Println("------", ad.AdInfo)
+	//var c []*Components
+	//c = append(c, component)
+	//err = kernel.handle(c, ad)
+	//if err != nil {
+	//	fmt.Println("出现错误了")
+	//}
 }
 
 func FakeRuleComponent() *Components {
@@ -73,7 +84,7 @@ func FakeRuleComponent() *Components {
 	leftRule2 := &Rule{
 		Value: Value{
 			Slot:      AdSpeedRateSlot,
-			ValueType: OI,
+			ValueType: OF,
 		},
 		COperator: GT,
 		Inputs: []Input{{
@@ -121,7 +132,7 @@ func FakeRuleComponent() *Components {
 	leftRule6 := &Rule{
 		Value: Value{
 			Slot:      AdExpoSpeedSlot,
-			ValueType: OI,
+			ValueType: OF,
 		},
 		COperator: LET,
 		Inputs: []Input{{
@@ -213,7 +224,7 @@ func FakeRuleComponent() *Components {
 	leftDecision5 := &Decision{
 		Value: Value{
 			Slot:      AdSpeedRateSlot,
-			ValueType: OI,
+			ValueType: OF,
 		},
 		AOperator: SUB,
 		Inputs: []Input{{
@@ -246,7 +257,7 @@ func FakeRuleComponent() *Components {
 	leftDecision8 := &Decision{
 		Value: Value{
 			Slot:      AdExpoSpeedSlot,
-			ValueType: OI,
+			ValueType: OF,
 		},
 		AOperator: SUB,
 		Inputs: []Input{{
@@ -270,9 +281,9 @@ func FakeRuleComponent() *Components {
 			Slot:      ACRSlot,
 			ValueType: OF,
 		},
-		AOperator: SUB,
+		AOperator: Div,
 		Inputs: []Input{{
-			Value: 2000,
+			Value: 23,
 		}},
 	}
 
@@ -281,15 +292,16 @@ func FakeRuleComponent() *Components {
 			Slot:      AccountSlot,
 			ValueType: OF,
 		},
-		AOperator: SUB,
+		AOperator: Mul,
 		Inputs: []Input{{
-			Value: 2000,
+			Value: 12,
 		}},
 	}
 	// order
 	leftOrder1 := &Order{
 		Handle: func(ad *Ad) (err error) {
 			fmt.Println(ad)
+			fmt.Println(ad.AdInfo)
 			fmt.Println("left order")
 			return err
 		},

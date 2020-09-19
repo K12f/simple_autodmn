@@ -54,7 +54,7 @@ type AdLeastTime struct {
 
 // 广告消耗速度
 type AdSpeedRate struct {
-	Value int `json:"value"` //广告消耗速度
+	Value float64 `json:"value"` //广告消耗速度
 }
 
 // 广告转化成本
@@ -69,7 +69,7 @@ type AdCurCost struct {
 
 // 广告曝光速度
 type AdExpoSpeed struct {
-	Value int `json:"value"` //
+	Value float64 `json:"value"` //
 }
 
 // 广告当日花费
@@ -129,11 +129,11 @@ func (ai *AdInfo) SetValue(value []interface{}, slot AdInfoSlot) error {
 		}
 	case AdSpeedRateSlot:
 		ai.AdSpeedRate = AdSpeedRate{
-			Value: value[0].(int),
+			Value: value[0].(float64),
 		}
 	case AdExpoSpeedSlot:
 		ai.AdExpoSpeed = AdExpoSpeed{
-			Value: value[0].(int),
+			Value: value[0].(float64),
 		}
 	default:
 		return errors.WithStack(fmt.Errorf("未知的类型"))

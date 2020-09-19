@@ -15,51 +15,51 @@ func NewInput() *Input {
 }
 
 // 获取int类型的输入值
-func (i Input) GetInt(input Input) (int, error) {
-	var value int
-	value, ok := input.Value.(int)
+func (i Input) GetInt(value interface{}) (int, error) {
+	var ret int
+	ret, ok := value.(int)
 	if ok {
-		return value, nil
+		return ret, nil
 	}
-	tmp, ok := input.Value.(string)
+	tmp, ok := value.(string)
 	if !ok {
 		return 0, errors.WithStack(CouldNotParseInputErr)
 	}
-	value, err := strconv.Atoi(tmp)
+	ret, err := strconv.Atoi(tmp)
 	if err != nil {
 		return 0, errors.Wrap(err, CouldNotParseInputErr.Error())
 	}
-	return value, nil
+	return ret, nil
 }
 
 // 获取 float64类型的输入
-func (i Input) GetFloat64(input Input) (float64, error) {
-	var value float64
-	value, ok := input.Value.(float64)
+func (i Input) GetFloat64(value interface{}) (float64, error) {
+	var ret float64
+	ret, ok := value.(float64)
 	if ok {
-		return value, nil
+		return ret, nil
 	}
-	valueT, ok := input.Value.(int)
+	valueT, ok := value.(int)
 	if ok {
-		value = float64(valueT)
-		return value, nil
+		ret = float64(valueT)
+		return ret, nil
 	}
-	tmp, ok := input.Value.(string)
+	tmp, ok := value.(string)
 	if !ok {
 		return 0, errors.WithStack(CouldNotParseInputErr)
 	}
-	value, err := strconv.ParseFloat(tmp, 64)
+	ret, err := strconv.ParseFloat(tmp, 64)
 	if err != nil {
 		return 0, errors.Wrap(err, CouldNotParseInputErr.Error())
 	}
-	return value, nil
+	return ret, nil
 }
 
 // 获取字符串类型的输入
-func (i Input) GetString(input Input) (string, error) {
-	value, ok := input.Value.(string)
+func (i Input) GetString(value interface{}) (string, error) {
+	ret, ok := value.(string)
 	if !ok {
 		return "", errors.WithStack(CouldNotParseInputErr)
 	}
-	return value, nil
+	return ret, nil
 }

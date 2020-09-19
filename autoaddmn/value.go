@@ -16,7 +16,7 @@ var (
 type ValueType string
 
 const (
-	OI  ValueType = "int"
+	//OI  ValueType = "int"
 	OF  ValueType = "float64"
 	OD  ValueType = "date"
 	OMD ValueType = "mul_date"
@@ -32,9 +32,9 @@ type Value struct {
 // 根据输入比较值
 func (v *Value) Compare(value []interface{}, valueType ValueType, inputs []Input, op ComparisonOperator) (bool, error) {
 	switch valueType {
-	case OI:
-		// int
-		return v.compareInt(value, inputs, op)
+	//case OI:
+	//    // int
+	//    return v.compareFloat64(value, inputs, op)
 	case OF:
 		// float
 		return v.compareFloat64(value, inputs, op)
@@ -55,7 +55,7 @@ func (v *Value) compareDate(value []interface{}, inputs []Input, op ComparisonOp
 	if len(inputs) != 2 {
 		return false, CouldNotCompareDateNotParamsErr
 	}
-	inpStart, err := inp.GetString(inputs[0])
+	inpStart, err := inp.GetString(inputs[0].Value)
 	if err != nil {
 		return false, err
 	}
@@ -63,7 +63,7 @@ func (v *Value) compareDate(value []interface{}, inputs []Input, op ComparisonOp
 	if err != nil {
 		return false, errors.WithStack(fmt.Errorf("input格式化开始时间%w", err))
 	}
-	inpEnd, err := inp.GetString(inputs[1])
+	inpEnd, err := inp.GetString(inputs[1].Value)
 	if err != nil {
 		return false, err
 	}
@@ -76,9 +76,9 @@ func (v *Value) compareDate(value []interface{}, inputs []Input, op ComparisonOp
 		return false, errors.WithStack(CouldNotCompareParseErr)
 	}
 
-	enableTimeStart, ok := value[0].(string)
-	if !ok {
-		return false, errors.WithStack(CouldNotCompareParseErr)
+	enableTimeStart, err := inp.GetString(value[0])
+	if err != nil {
+		return false, err
 	}
 	formattedEnableStart, err := time.Parse(TimeFormat, enableTimeStart)
 	if err != nil {
@@ -91,9 +91,9 @@ func (v *Value) compareDate(value []interface{}, inputs []Input, op ComparisonOp
 
 	// 如果 注入的值是两个
 	if len(value) == 2 {
-		enableTimeEnd, ok := value[1].(string)
-		if !ok {
-			return false, errors.WithStack(CouldNotCompareParseErr)
+		enableTimeEnd, err := inp.GetString(value[1])
+		if err != nil {
+			return false, err
 		}
 
 		formattedEnableEnd, err := time.Parse(TimeFormat, enableTimeEnd)
@@ -117,12 +117,13 @@ func (v *Value) compareFloat64(value []interface{}, inputs []Input, op Compariso
 	if len(inputs) > 2 || len(inputs) < 1 {
 		return false, ParamsErr
 	}
-	valueTmp, ok := value[0].(float64)
-	if !ok {
-		return false, errors.WithStack(CouldNotParseValueErr)
+
+	valueTmp, err := inp.GetFloat64(value[0])
+	if err != nil {
+		return false, errors.Wrap(err, CouldNotParseValueErr.Error())
 	}
 
-	input, err := inp.GetFloat64(inputs[0])
+	input, err := inp.GetFloat64(inputs[0].Value)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
@@ -130,39 +131,11 @@ func (v *Value) compareFloat64(value []interface{}, inputs []Input, op Compariso
 		return compare.CompareFloat64(valueTmp, input, op), nil
 	} else {
 		// 多输入个值使用between 判断
-		input2, err := inp.GetFloat64(inputs[1])
+		input2, err := inp.GetFloat64(inputs[1].Value)
 		if err != nil {
 			return false, errors.WithStack(err)
 		}
 		return compare.BetweenFloat64(valueTmp, input, input2, op), nil
-	}
-}
-
-// 比较int类型
-func (v *Value) compareInt(value []interface{}, inputs []Input, op ComparisonOperator) (bool, error) {
-	if len(inputs) > 2 || len(inputs) < 1 {
-		return false, errors.WithStack(ParamsErr)
-	}
-
-	valueTmp, ok := value[0].(int)
-
-	if !ok {
-		return false, errors.WithStack(CouldNotParseValueErr)
-	}
-
-	input, err := inp.GetInt(inputs[0])
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
-	// 多输入个值使用between 判断
-	if len(inputs) == 1 {
-		return compare.CompareInt(valueTmp, input, op), nil
-	} else {
-		input2, err := inp.GetInt(inputs[1])
-		if err != nil {
-			return false, errors.WithStack(err)
-		}
-		return compare.BetweenInt(valueTmp, input, input2, op), nil
 	}
 }
 
@@ -171,8 +144,8 @@ func (v *Value) Calc(value []interface{}, valueType ValueType, inputs []Input, o
 	var result []interface{}
 
 	switch valueType {
-	case OI:
-		return v.calcInt(value, inputs, op)
+	//case OI:
+	//    return v.calcFloat64(value, inputs, op)
 	case OF:
 		return v.calcFloat64(value, inputs, op)
 	case OD:
@@ -191,7 +164,7 @@ func (v *Value) calcTime(value []interface{}, inputs []Input, op ArithmeticOpera
 		return result, ParamsErr
 	}
 	// 增加的以分钟为单位
-	input, err := inp.GetInt(inputs[0])
+	input, err := inp.GetInt(inputs[0].Value)
 	if err != nil {
 		return result, errors.WithStack(err)
 	}
@@ -200,9 +173,14 @@ func (v *Value) calcTime(value []interface{}, inputs []Input, op ArithmeticOpera
 		return result, ParamsErr
 	}
 
-	start := value[0].(string)
-	end := value[1].(string)
-
+	start, err := inp.GetString(value[0])
+	if err != nil {
+		return result, errors.WithStack(err)
+	}
+	end, err := inp.GetString(value[1])
+	if err != nil {
+		return result, errors.WithStack(err)
+	}
 	switch op {
 	case ADD:
 		tmpStart, err := time.Parse(TimeFormat, start)
@@ -240,14 +218,15 @@ func (v *Value) calcFloat64(value []interface{}, inputs []Input, op ArithmeticOp
 	if len(inputs) != 1 {
 		return result, ParamsErr
 	}
-	input, err := inp.GetFloat64(inputs[0])
+	input, err := inp.GetFloat64(inputs[0].Value)
 	if err != nil {
 		return result, errors.WithStack(err)
 	}
 
-	valueTmp, ok := value[0].(float64)
-	if !ok {
-		return result, errors.WithStack(CouldNotParseValueErr)
+	valueTmp, err := inp.GetFloat64(value[0])
+
+	if err != nil {
+		return result, errors.WithStack(err)
 	}
 
 	switch op {
@@ -255,43 +234,11 @@ func (v *Value) calcFloat64(value []interface{}, inputs []Input, op ArithmeticOp
 		result = append(result, operator.AddFloat64(valueTmp, input))
 	case SUB:
 		result = append(result, operator.SubFloat64(valueTmp, input))
+	case Mul:
+		result = append(result, operator.MulFloat64(valueTmp, input))
+	case Div:
+		result = append(result, operator.DivFloat64(valueTmp, input))
 	case Per:
-		result = append(result, operator.Percent(valueTmp, input))
-	default:
-		return result, errors.WithStack(UnknownArithmeticOperatorErr)
-	}
-	return result, nil
-}
-
-// 计算int
-func (v *Value) calcInt(value []interface{}, inputs []Input, op ArithmeticOperator) ([]interface{}, error) {
-	var result []interface{}
-	if len(inputs) != 1 {
-		return result, errors.WithStack(ParamsErr)
-	}
-
-	valueTmp, ok := value[0].(int)
-	if !ok {
-		return result, errors.WithStack(CouldNotParseValueErr)
-	}
-	switch op {
-	case ADD:
-		input, err := inp.GetInt(inputs[0])
-		if err != nil {
-			return result, errors.WithStack(err)
-		}
-		result = append(result, operator.AddInt(valueTmp, input))
-	case SUB:
-		input, err := inp.GetInt(inputs[0])
-		if err != nil {
-			return result, errors.WithStack(err)
-		}
-		result = append(result, operator.SubInt(valueTmp, input))
-	case Per:
-		input, err := inp.GetFloat64(inputs[0])
-		if err != nil {
-			return result, errors.WithStack(err)
-		}
 		result = append(result, operator.Percent(valueTmp, input))
 	default:
 		return result, errors.WithStack(UnknownArithmeticOperatorErr)
