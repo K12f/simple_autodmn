@@ -2,7 +2,6 @@ package autoaddmn
 
 import (
 	"fmt"
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 )
 
@@ -72,7 +71,7 @@ func (p *Parse) ParseDecisions(decisions []*Decision, ad *Ad) error {
 			}
 		}
 	} else {
-		glog.Error(CouldNotFindParseDecisionsErr.Error())
+		fmt.Printf("!! ID:%s-%s \n", ad.AdConfig.AdID, CouldNotFindParseDecisionsErr.Error())
 	}
 
 	return errors.WithStack(err)
@@ -93,7 +92,7 @@ func (p *Parse) ParseOrders(orders []*Order, ad *Ad) error {
 			}
 		}
 	} else {
-		glog.Error(CouldNotFindParseOrdersErr.Error())
+		fmt.Printf("!! ID:%s-%s \n", ad.AdConfig.AdID, CouldNotFindParseOrdersErr.Error())
 	}
 	return err
 }
