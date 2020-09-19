@@ -16,16 +16,17 @@ func NewParse() *Parse {
 
 // 根据规则，广告微信数据信息，解析规则
 func (p *Parse) ParseRules(rules []*Rule, ad *Ad) (bool, error) {
-	if len(rules) < 1 {
-		return false, errors.WithStack(CouldNotFindParseRulesErr)
-	}
-	fmt.Println("正在解析规则")
 	// 结果集
 	var compared []bool
 	// 操作符
 	var logicBox []LogicOperatorType
 	var err error
 	var flag bool
+
+	if len(rules) < 1 {
+		return false, errors.WithStack(CouldNotFindParseRulesErr)
+	}
+	fmt.Println("正在解析规则")
 	operator := NewOperator()
 
 	for _, rv := range rules {
@@ -44,23 +45,8 @@ func (p *Parse) ParseRules(rules []*Rule, ad *Ad) (bool, error) {
 		logicBox = append(logicBox, rv.LOperator)
 	}
 
-	// 防止溢出
-	if len(logicBox) > 1 && len(logicBox) >= len(compared) {
-		logicBox = logicBox[:len(logicBox)-1]
-	}
-
-	for k, c := range logicBox {
-		if len(compared) < k {
-			return false, ParseRuleOutOfRangeErr
-		}
-
-		flag, err = operator.LogicCombine(c, compared[k], compared[k+1])
-		if err != nil {
-			return false, errors.WithStack(err)
-		}
-		compared[k+1] = flag
-	}
-	return flag, nil
+	flag, err = operator.MultiLogicCombine(compared, logicBox)
+	return flag, err
 }
 
 // 根据规则，广告微信数据信息，解析决策

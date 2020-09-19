@@ -27,62 +27,50 @@ func NewCompare() Compare {
 	return Compare{}
 }
 
-// 根据 操作符和值 比较两个int类型
-func (c Compare) CompareInt(value, target int, op ComparisonOperator) bool {
-	switch op {
-	case EQ:
-		return value == target
-	case LT:
-		return value < target
-	case GT:
-		return value > target
-	case LET:
-		return value <= target
-	case GET:
-		return value >= target
-	}
-	return false
+func (c Compare) EqFloat64(a, b float64) bool {
+	return a == b
 }
 
-// 根据 操作符和值 比较两个float类型
-func (c Compare) CompareFloat64(value, target float64, op ComparisonOperator) bool {
-	switch op {
-	case EQ:
-		return value == target
-	case LT:
-		return value < target
-	case GT:
-		return value > target
-	case LET:
-		return value <= target
-	case GET:
-		return value >= target
-	}
-	return false
+func (c Compare) GTFloat64(a, b float64) bool {
+	return a > b
 }
 
-// 根据 输入的 float类型值，判断 数据是否在 [min max] 之间
-func (c Compare) BetweenFloat64(value, min, max float64, op ComparisonOperator) bool {
-	if value < min || value > max {
-		return false
-	}
-	return true
+func (c Compare) GETFloat64(a, b float64) bool {
+	return a >= b
 }
 
-// 根据 输入的 int类型值，判断 数据是否在 [min max] 之间
-func (c Compare) BetweenInt(value, min, max int, op ComparisonOperator) bool {
-	if value < min || value > max {
-		return false
-	}
-	return true
+func (c Compare) LTFloat64(a, b float64) bool {
+	return a < b
 }
 
-// 判断 value是否在target之后
-func (c Compare) CompareIsAfterTime(value, target time.Time) bool {
-	return value.After(target)
+func (c Compare) LETFloat64(a, b float64) bool {
+	return a <= b
 }
 
-// 判断 value是否在target之前
-func (c Compare) CompareIsBeforeTime(value, target time.Time) bool {
-	return value.Before(target)
+func (c Compare) BetweenFloat64(a float64, b ...float64) bool {
+	return a >= b[0] && a <= b[1]
+}
+
+func (c Compare) EqDate(a, b time.Time) bool {
+	return a.Equal(b)
+}
+
+func (c Compare) LTDate(a, b time.Time) bool {
+	return a.Unix() < b.Unix()
+}
+
+func (c Compare) GTDate(a, b time.Time) bool {
+	return a.Unix() > b.Unix()
+}
+
+func (c Compare) LETDate(a, b time.Time) bool {
+	return a.Before(b)
+}
+
+func (c Compare) GETDate(a, b time.Time) bool {
+	return a.After(b)
+}
+
+func (c Compare) BetweenDate(a, b, m time.Time) bool {
+	return a.After(b) && a.Before(m)
 }

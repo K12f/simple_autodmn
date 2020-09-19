@@ -31,215 +31,247 @@ type Value struct {
 
 // 根据输入比较值
 func (v *Value) Compare(value []interface{}, valueType ValueType, inputs []Input, op ComparisonOperator) (bool, error) {
-	switch valueType {
-	//case OI:
-	//    // int
-	//    return v.compareFloat64(value, inputs, op)
-	case OF:
-		// float
-		return v.compareFloat64(value, inputs, op)
-	case OD:
-		// 日期
-		return v.compareDate(value, inputs, op)
-	case OMD:
-		// 多个日期
-		return v.compareDate(value, inputs, op)
-	default:
-		return false, errors.WithStack(CouldNotParseValueErr)
+	var resultTemp bool
+	var compared []bool
+	var logicBox []LogicOperatorType
+	var err error
+	var result bool
+
+	// 不能没有值和输入 且 输入的长度>=值的长度
+	if len(inputs) == 0 || len(value) == 0 || (len(inputs) < len(value) && len(inputs) != 1) {
+		return result, ParamsErr
 	}
+
+	// 比较的输入值 长度不能超过2
+	if len(inputs) > 2 {
+		return result, errors.WithStack(CouldOutOfRangeFor2)
+	}
+
+	for _, vV := range value {
+		// 值不能为空
+		if vV == nil {
+			return result, errors.WithStack(CouldNotFindValueErr)
+		}
+
+		switch valueType {
+		//case OI:
+		//    // int
+		//    return v.compareFloat64(value, inputs, op)
+		case OF:
+			// float
+			resultTemp, err = v.compareFloat64(vV, inputs, op)
+		case OD, OMD:
+			// 日期
+			resultTemp, err = v.compareDate(vV, inputs, op)
+		default:
+			err = errors.WithStack(CouldNotParseValueErr)
+		}
+		compared = append(compared, resultTemp)
+		logicBox = append(logicBox, AND)
+	}
+	result, err = operator.MultiLogicCombine(compared, logicBox)
+	return result, err
+
 }
 
-// 比较日期
-func (v *Value) compareDate(value []interface{}, inputs []Input, op ComparisonOperator) (bool, error) {
-	var flag bool
-	if len(inputs) != 2 {
-		return false, CouldNotCompareDateNotParamsErr
-	}
-	inpStart, err := inp.GetString(inputs[0].Value)
-	if err != nil {
-		return false, err
-	}
-	formattedStart, err := time.Parse(TimeFormat, inpStart)
-	if err != nil {
-		return false, errors.WithStack(fmt.Errorf("input格式化开始时间%w", err))
-	}
-	inpEnd, err := inp.GetString(inputs[1].Value)
-	if err != nil {
-		return false, err
-	}
-	formattedEnd, err := time.Parse(TimeFormat, inpEnd)
-	if err != nil {
-		return false, errors.WithStack(fmt.Errorf("input格式化结束时间%w", err))
-	}
+func (v *Value) compareDate(value interface{}, inputs []Input, op ComparisonOperator) (bool, error) {
+	var input []string
+	var err error
+	var result bool
 
-	if len(value) < 1 {
-		return false, errors.WithStack(CouldNotCompareParseErr)
-	}
-
-	enableTimeStart, err := inp.GetString(value[0])
-	if err != nil {
-		return false, err
-	}
-	formattedEnableStart, err := time.Parse(TimeFormat, enableTimeStart)
-	if err != nil {
-		return false, errors.WithStack(CouldNotCompareParseErr)
-	}
-
-	if compare.CompareIsBeforeTime(formattedEnd, formattedStart) {
-		return false, errors.New("结束时间不能小于开始时间")
-	}
-
-	// 如果 注入的值是两个
-	if len(value) == 2 {
-		enableTimeEnd, err := inp.GetString(value[1])
-		if err != nil {
-			return false, err
-		}
-
-		formattedEnableEnd, err := time.Parse(TimeFormat, enableTimeEnd)
-		if err != nil {
-			return false, errors.WithStack(CouldNotCompareParseErr)
-		}
-		if compare.CompareIsBeforeTime(formattedEnableEnd, formattedEnableStart) {
-			return false, errors.New("结束时间不能小于开始时间")
-		}
-
-		flag = compare.CompareIsAfterTime(formattedEnableStart, formattedStart) && compare.CompareIsAfterTime(formattedEnd, formattedEnableEnd)
-	} else {
-		flag = compare.CompareIsAfterTime(formattedEnableStart, formattedStart) && compare.CompareIsBeforeTime(formattedEnableStart, formattedEnd)
-	}
-
-	return flag, nil
-}
-
-// 比较float64类型
-func (v *Value) compareFloat64(value []interface{}, inputs []Input, op ComparisonOperator) (bool, error) {
-	if len(inputs) > 2 || len(inputs) < 1 {
-		return false, ParamsErr
-	}
-
-	valueTmp, err := inp.GetFloat64(value[0])
+	valueTmp, err := inp.GetString(value)
 	if err != nil {
 		return false, errors.Wrap(err, CouldNotParseValueErr.Error())
 	}
 
-	input, err := inp.GetFloat64(inputs[0].Value)
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
-	if len(inputs) == 1 {
-		return compare.CompareFloat64(valueTmp, input, op), nil
-	} else {
-		// 多输入个值使用between 判断
-		input2, err := inp.GetFloat64(inputs[1].Value)
+	for _, inpValue := range inputs {
+		inputTemp, err := inp.GetString(inpValue.Value)
 		if err != nil {
 			return false, errors.WithStack(err)
 		}
-		return compare.BetweenFloat64(valueTmp, input, input2, op), nil
+		input = append(input, inputTemp)
 	}
+
+	//now, _ := time.Parse(format, time.Now().Format(format))
+	timeA, err := time.Parse(TimeFormat, valueTmp)
+	if err != nil {
+		return false, errors.WithStack(fmt.Errorf("value格式化时间%w", err))
+	}
+
+	timeB, err := time.Parse(TimeFormat, input[0])
+	if err != nil {
+		return false, errors.WithStack(fmt.Errorf("input格式化时间%w", err))
+	}
+
+	switch op {
+	case EQ:
+		result = compare.EqDate(timeA, timeB)
+	case LT:
+		result = compare.LTDate(timeA, timeB)
+	case GT:
+		result = compare.GTDate(timeA, timeB)
+	case LET:
+		result = compare.LETDate(timeA, timeB)
+	case GET:
+		result = compare.GETDate(timeA, timeB)
+	case BETWEEN:
+		timeC, err := time.Parse(TimeFormat, input[1])
+		if err != nil {
+			return false, errors.WithStack(fmt.Errorf("input格式化时间%w", err))
+		}
+		result = compare.BetweenDate(timeA, timeB, timeC)
+	default:
+
+	}
+	return result, err
+}
+
+// 比较float64类型
+func (v *Value) compareFloat64(value interface{}, inputs []Input, op ComparisonOperator) (bool, error) {
+	var input []float64
+	var err error
+	var result bool
+
+	valueTmp, err := inp.GetFloat64(value)
+	if err != nil {
+		return result, errors.Wrap(err, CouldNotParseValueErr.Error())
+	}
+
+	for _, inpValue := range inputs {
+		inputTemp, err := inp.GetFloat64(inpValue.Value)
+		if err != nil {
+			return result, errors.WithStack(err)
+		}
+		input = append(input, inputTemp)
+	}
+
+	switch op {
+	case EQ:
+		result = compare.EqFloat64(valueTmp, input[0])
+	case LT:
+		result = compare.LTFloat64(valueTmp, input[0])
+	case GT:
+		result = compare.GTFloat64(valueTmp, input[0])
+	case LET:
+		result = compare.LETFloat64(valueTmp, input[0])
+	case GET:
+		result = compare.GETFloat64(valueTmp, input[0])
+	case BETWEEN:
+		result = compare.BetweenFloat64(valueTmp, input[0])
+	default:
+
+	}
+	return result, err
 }
 
 // 根据操作符和输入值 计算值，并返回
 func (v *Value) Calc(value []interface{}, valueType ValueType, inputs []Input, op ArithmeticOperator) ([]interface{}, error) {
 	var result []interface{}
+	var temp interface{}
+	var input Input
+	var err error
 
-	switch valueType {
-	//case OI:
-	//    return v.calcFloat64(value, inputs, op)
-	case OF:
-		return v.calcFloat64(value, inputs, op)
-	case OD:
-		return v.calcTime(value, inputs, op)
-	case OMD:
-		return v.calcTime(value, inputs, op)
-	default:
-		return result, errors.WithStack(UnknownValueTypeErr)
+	// 不能没有值和输入 且 输入的长度>=值的长度
+	if len(inputs) == 0 || len(value) == 0 || (len(inputs) < len(value) && len(inputs) != 1) {
+		return result, ParamsErr
 	}
+
+	for k, vV := range value {
+		// 值不能为空
+		if vV == nil {
+			return result, errors.WithStack(CouldNotFindValueErr)
+		}
+		//如果只有一个值，那么就获取该值，否则获取对应的 输入值
+		if len(inputs) == 1 {
+			// 增加的以分钟为单位
+			input = inputs[0]
+		} else {
+			input = inputs[k]
+		}
+
+		switch valueType {
+		//case OI:
+		//    return v.calcFloat64(value, inputs, op)
+		case OF:
+			temp, err = v.calcFloat64(vV, input, op)
+			if err != nil {
+				return result, errors.WithStack(err)
+			}
+		case OD:
+			temp, err = v.calcTime(vV, input, op)
+			if err != nil {
+				return result, errors.WithStack(err)
+			}
+		case OMD:
+			temp, err = v.calcTime(vV, input, op)
+			if err != nil {
+				return result, errors.WithStack(err)
+			}
+		default:
+			return result, errors.WithStack(UnknownValueTypeErr)
+		}
+		result = append(result, temp)
+	}
+
+	return result, nil
 }
 
 // 计算时间
-func (v *Value) calcTime(value []interface{}, inputs []Input, op ArithmeticOperator) ([]interface{}, error) {
-	var result []interface{}
-	if len(inputs) != 1 {
-		return result, ParamsErr
-	}
-	// 增加的以分钟为单位
-	input, err := inp.GetInt(inputs[0].Value)
+func (v *Value) calcTime(value interface{}, input Input, op ArithmeticOperator) (string, error) {
+	var result string
+	var timeTemp time.Time
+
+	temp, err := inp.GetString(value)
 	if err != nil {
 		return result, errors.WithStack(err)
 	}
 
-	if len(value) != 2 {
-		return result, ParamsErr
+	inputTemp, err := inp.GetFloat64(input.Value)
+	if err != nil {
+		return result, errors.WithStack(err)
 	}
 
-	start, err := inp.GetString(value[0])
+	timeTemp, err = time.Parse(TimeFormat, temp)
 	if err != nil {
-		return result, errors.WithStack(err)
+		return result, errors.Wrap(err, err.Error())
 	}
-	end, err := inp.GetString(value[1])
-	if err != nil {
-		return result, errors.WithStack(err)
-	}
+
 	switch op {
 	case ADD:
-		tmpStart, err := time.Parse(TimeFormat, start)
-		if err != nil {
-			return result, errors.Wrap(err, err.Error())
-		}
-		start = operator.AddTime(tmpStart, input).Format(TimeFormat)
-		tmpEnd, err := time.Parse(TimeFormat, end)
-		if err != nil {
-			return result, errors.Wrap(err, err.Error())
-		}
-		end = operator.AddTime(tmpEnd, input).Format(TimeFormat)
+		result = operator.AddTime(timeTemp, inputTemp).Format(TimeFormat)
 	case SUB:
-		tmpStart, err := time.Parse(TimeFormat, start)
-		if err != nil {
-			return result, errors.Wrap(err, err.Error())
-		}
-		start = operator.SubTime(tmpStart, input).Format(TimeFormat)
-		tmpEnd, err := time.Parse(TimeFormat, end)
-		if err != nil {
-			return result, errors.Wrap(err, err.Error())
-		}
-		end = operator.SubTime(tmpEnd, input).Format(TimeFormat)
+		result = operator.SubTime(timeTemp, inputTemp).Format(TimeFormat)
 	default:
 		return result, errors.WithStack(UnknownArithmeticOperatorErr)
 	}
-	result = append(result, start)
-	result = append(result, end)
 	return result, nil
 }
 
 // 计算float
-func (v *Value) calcFloat64(value []interface{}, inputs []Input, op ArithmeticOperator) ([]interface{}, error) {
-	var result []interface{}
-	if len(inputs) != 1 {
-		return result, ParamsErr
-	}
-	input, err := inp.GetFloat64(inputs[0].Value)
+func (v *Value) calcFloat64(value interface{}, input Input, op ArithmeticOperator) (float64, error) {
+	var result float64
+	valueTmp, err := inp.GetFloat64(value)
+
 	if err != nil {
 		return result, errors.WithStack(err)
 	}
 
-	valueTmp, err := inp.GetFloat64(value[0])
-
+	inputTemp, err := inp.GetFloat64(input.Value)
 	if err != nil {
 		return result, errors.WithStack(err)
 	}
 
 	switch op {
 	case ADD:
-		result = append(result, operator.AddFloat64(valueTmp, input))
+		result = operator.AddFloat64(valueTmp, inputTemp)
 	case SUB:
-		result = append(result, operator.SubFloat64(valueTmp, input))
+		result = operator.SubFloat64(valueTmp, inputTemp)
 	case Mul:
-		result = append(result, operator.MulFloat64(valueTmp, input))
+		result = operator.MulFloat64(valueTmp, inputTemp)
 	case Div:
-		result = append(result, operator.DivFloat64(valueTmp, input))
+		result = operator.DivFloat64(valueTmp, inputTemp)
 	case Per:
-		result = append(result, operator.Percent(valueTmp, input))
+		result = operator.Percent(valueTmp, inputTemp)
 	default:
 		return result, errors.WithStack(UnknownArithmeticOperatorErr)
 	}

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/gogf/gf/os/glog"
 	"github.com/pkg/errors"
-	"time"
 )
 
 var (
@@ -12,10 +11,10 @@ var (
 	Version = "0.0.1"
 )
 
-func init() {
-	fmt.Printf("%s \n 版本:%s \n 时间:%s", Name, Version, time.Now().Format(TimeFormat))
-	fmt.Println("----------------------------")
-}
+//func init() {
+//	fmt.Printf("%s \n 版本:%s \n 时间:%s", Name, Version, time.Now().Format(TimeFormat))
+//	fmt.Println("----------------------------")
+//}
 
 // dmn 核心，对外暴露
 type Kernel struct {
@@ -105,9 +104,10 @@ func (k Kernel) handle(components []*Components, ad *Ad) error {
 					fmt.Println("正在进入右节点子组件")
 					return k.handle(v.Right.Components, ad)
 				}
-			} else {
-				glog.Error(NotFoundRuleComponentsRightErr.Error())
 			}
+			//else {
+			//	glog.Error(NotFoundRuleComponentsRightErr.Error())
+			//}
 		}
 		//底部指令解析
 		if v.Bottom != nil {

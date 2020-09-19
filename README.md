@@ -26,6 +26,10 @@
 * 右节点: else
 * 底部节点: 一些匿名函数组成的指令集
 * 当程序发现某些节点没有值时，会出入日志到stdout
+
+> Value 为 AdInfo 中结构体 的值 , input为输入的值
+* 比较值可以(value 和 input)  1对1,1对2(in),多对多
+* 计算值可以(value 和input) ,多对多
 #### 结构关系
 * Slot 定义在 adinfo.go 中，如果添加，修改 请自行添加
 * value.go 中的 Slot 用来匹配具体是AdInfo中的哪个结构体数据

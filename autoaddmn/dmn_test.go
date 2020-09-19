@@ -88,7 +88,7 @@ func FakeRuleComponent() *Components {
 		},
 		COperator: GT,
 		Inputs: []Input{{
-			Value: "12",
+			Value: 12,
 		}},
 		LOperator: AND,
 	}

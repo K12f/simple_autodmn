@@ -35,6 +35,7 @@ func (i Input) GetInt(value interface{}) (int, error) {
 // 获取 float64类型的输入
 func (i Input) GetFloat64(value interface{}) (float64, error) {
 	var ret float64
+
 	ret, ok := value.(float64)
 	if ok {
 		return ret, nil
