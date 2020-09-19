@@ -110,14 +110,12 @@ func (k Kernel) handle(components []*Components, ad *Ad) error {
 						return errors.Wrap(err, CouldNotParseSubComponentsErr.Error())
 					}
 				}
+			} else {
+				fmt.Printf("!! ID:%s-%s \n", ad.AdConfig.AdID, NotFoundRuleComponentsRightErr.Error())
+				//glog.Error(NotFoundRuleComponentsRightErr.Error())
 			}
-			//else {
-			//	glog.Error(NotFoundRuleComponentsRightErr.Error())
-			//}
 		}
 		//底部指令解析
-		fmt.Println(v.Bottom)
-
 		if v.Bottom != nil {
 			err = parse.ParseOrders(v.Bottom.Orders, ad)
 			if err != nil {
