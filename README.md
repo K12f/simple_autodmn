@@ -1,6 +1,6 @@
 ### autoaddmn(广告决策自动化)
 
-#### 包结构
+####包结构
 ```text
 ├─ad.go :广告主体
 ├─adinfo.go :广告参数信息
@@ -29,7 +29,7 @@
 #### 结构关系
 * Slot 定义在 adinfo.go 中，如果添加，修改 请自行添加
 * value.go 中的 Slot 用来匹配具体是AdInfo中的哪个结构体数据
-* value.go 中的 ValueType用来标记Slot匹配后 value的值类型 包含( OI:int,OF:float,OD:日期,OMD:多个日期)
+* value.go 中的 ValueType用来标记Slot匹配后 value的值类型 包含( ~~~OI:int~~~,OF:float,OD:日期,OMD:多个日期)
 * Input输入的价格和定义的单位为 分, Input输入的时间单位为: 分钟
 * 目前不支持 逻辑运算符 ! (没有替换的)
 ```go
@@ -72,9 +72,11 @@ const (
 type ArithmeticOperator string
 
 const (
-    ADD ArithmeticOperator = "+"
-    SUB ArithmeticOperator = "-"
-    Per ArithmeticOperator = "%"
+	ADD ArithmeticOperator = "+"
+	SUB ArithmeticOperator = "-"
+	Mul ArithmeticOperator = "*"
+	Div ArithmeticOperator = "/"
+	Per ArithmeticOperator = "%"
 )
 
 // 接收 Ad 广告数据
@@ -137,7 +139,7 @@ type Handle func(ad *Ad) error
     leftRule1 := &Rule{
         Value: Value{
             Slot:      AdSpeedRateSlot,
-            ValueType: OI,
+            ValueType: OF,
         },
         COperator: GT,
         Inputs: []Input{{
@@ -195,3 +197,5 @@ func (p *Parse) ParseRules(rules []*Rule, ad *Ad) (bool, error) {
 * 11.执行底部指令集
 * 12.判断err
 
+##### 传值格式
+[前端传递到后端的格式参考demo](autoaddmn/data_demo.json)
