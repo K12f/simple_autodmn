@@ -430,7 +430,31 @@ func TestAdRuleJson(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(ad.AdInfo)
+
+	order1 := NewOrder(func(ad *Ad) error {
+		var err error
+		fmt.Println(ad)
+		fmt.Println(ad.AdInfo)
+		fmt.Println("left order")
+		return err
+	})
+
+	bottom := NewBottom()
+	bottomOrder1 := NewOrder(func(ad *Ad) error {
+		var err error
+		fmt.Println(ad)
+		fmt.Println(ad.AdInfo)
+		fmt.Println("boommmmmmmmmmmm order")
+		return err
+	})
+
+	for _, component := range ad.AdRule.Components {
+		component.Left.PushOrders(order1)
+		bottom.PushOrders(bottomOrder1)
+		component.PushBottom(bottom)
+
+	}
+	fmt.Println(ad)
 	kernel := NewKernel()
 	err = kernel.Startup(ad)
 	if err != nil {

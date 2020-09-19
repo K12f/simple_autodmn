@@ -15,13 +15,13 @@ var (
 	UnknownValueTypeErr          = errors.New("未知的值类型")
 
 	// 解析 rule
-	NotFoundRuleComponentsErr      = errors.New("未发现广告规则组件数据")
-	NotFoundRuleComponentsLeftErr  = errors.New("未发现广告规则组件左节点数据")
-	NotFoundRuleComponentsRightErr = errors.New("未发现广告规则组件右节点数据")
-	ParseRuleOutOfRangeErr         = errors.New("解析规则超过范围")
-	CouldNotParseRulesErr          = errors.New("不能解析规则")
-	CouldNotParseDecisionsErr      = errors.New("不能解析决策")
-	CouldNotParseOrdersErr         = errors.New("不能解析指令")
+	NotFoundRuleComponentsErr     = errors.New("未发现广告规则组件数据")
+	NotFoundRuleComponentsLeftErr = errors.New("未发现广告规则组件左节点数据")
+	ParseRuleOutOfRangeErr        = errors.New("解析规则超过范围")
+	CouldNotParseRulesErr         = errors.New("不能解析规则")
+	CouldNotParseDecisionsErr     = errors.New("不能解析决策")
+	CouldNotParseOrdersErr        = errors.New("不能解析指令")
+	CouldNotParseSubComponentsErr = errors.New("不能解析子组件")
 
 	CouldNotFindParseRulesErr     = errors.New("没有发现解析规则")
 	CouldNotFindParseDecisionsErr = errors.New("没有发现解析决策")

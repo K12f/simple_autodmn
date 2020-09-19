@@ -298,14 +298,14 @@ func FakeRuleComponent() *Components {
 		}},
 	}
 	// order
-	leftOrder1 := &Order{
-		Handle: func(ad *Ad) (err error) {
-			fmt.Println(ad)
-			fmt.Println(ad.AdInfo)
-			fmt.Println("left order")
-			return err
-		},
-	}
+	order := NewOrder(func(ad *Ad) error {
+		var err error
+		fmt.Println(ad)
+		fmt.Println(ad.AdInfo)
+		fmt.Println("left order")
+		return err
+	})
+	leftOrder1 := order
 	//
 	//right
 
@@ -338,9 +338,9 @@ func FakeRuleComponent() *Components {
 	}
 
 	components := NewComponents()
-	componentsLeft := NewComponentsLeft()
-	componentsRight := NewComponentsRight()
-	componentsBottom := NewComponentsBottom()
+	componentsLeft := NewLeft()
+	componentsRight := NewRight()
+	componentsBottom := NewBottom()
 
 	componentsLeft.PushRules(leftRule1, leftRule2, leftRule3, leftRule4, leftRule5, leftRule6, leftRule7, leftRule8, leftRule9)
 
@@ -350,7 +350,7 @@ func FakeRuleComponent() *Components {
 	componentsLeft.PushOrders(leftOrder1)
 
 	components2 := NewComponents()
-	componentsLeft2 := NewComponentsLeft()
+	componentsLeft2 := NewLeft()
 	componentsLeft2.PushRules(leftRule1, leftRule2)
 	componentsLeft2.PushDecisions(leftDecision1)
 	componentsLeft2.PushOrders(leftOrder1)

@@ -82,7 +82,10 @@ func (k Kernel) handle(components []*Components, ad *Ad) error {
 				fmt.Println("----------------------------")
 				fmt.Println("正在进入左节点子组件:")
 				//迭代
-				return k.handle(v.Left.Components, ad)
+				err = k.handle(v.Left.Components, ad)
+				if err != nil {
+					return errors.Wrap(err, CouldNotParseSubComponentsErr.Error())
+				}
 			}
 		} else {
 			// 判断是否有组件右节点数据
@@ -102,7 +105,10 @@ func (k Kernel) handle(components []*Components, ad *Ad) error {
 				if len(v.Right.Components) > 0 {
 					fmt.Println("----------------------------")
 					fmt.Println("正在进入右节点子组件")
-					return k.handle(v.Right.Components, ad)
+					err = k.handle(v.Right.Components, ad)
+					if err != nil {
+						return errors.Wrap(err, CouldNotParseSubComponentsErr.Error())
+					}
 				}
 			}
 			//else {
@@ -110,6 +116,8 @@ func (k Kernel) handle(components []*Components, ad *Ad) error {
 			//}
 		}
 		//底部指令解析
+		fmt.Println(v.Bottom)
+
 		if v.Bottom != nil {
 			err = parse.ParseOrders(v.Bottom.Orders, ad)
 			if err != nil {

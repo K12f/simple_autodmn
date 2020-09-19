@@ -49,7 +49,7 @@ func (c *Components) PushBottom(bottom *Bottom) {
 }
 
 // 左结构体实例化
-func NewComponentsLeft() *Left {
+func NewLeft() *Left {
 	return &Left{}
 }
 
@@ -74,7 +74,7 @@ func (l *Left) PushComponents(component ...*Components) {
 }
 
 // 右结构体实例化
-func NewComponentsRight() *Right {
+func NewRight() *Right {
 	return &Right{}
 }
 
@@ -94,7 +94,7 @@ func (r *Right) PushComponents(component ...*Components) {
 }
 
 // 右结构体实例化
-func NewComponentsBottom() *Bottom {
+func NewBottom() *Bottom {
 	return &Bottom{}
 }
 

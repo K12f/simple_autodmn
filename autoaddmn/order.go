@@ -6,3 +6,7 @@ type Order struct {
 
 // 接收 Ad 广告数据
 type Handle func(ad *Ad) error
+
+func NewOrder(handle Handle) *Order {
+	return &Order{handle}
+}
