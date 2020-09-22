@@ -64,7 +64,7 @@ func (v *Value) Compare(value []interface{}, valueType ValueType, inputs []Input
 			// 日期
 			resultTemp, err = v.compareDate(vV, inputs, op)
 		default:
-			err = errors.WithStack(CouldNotParseValueErr)
+			err = errors.WithStack(UnknownValueTypeErr)
 		}
 		compared = append(compared, resultTemp)
 		logicBox = append(logicBox, AND)
@@ -81,7 +81,7 @@ func (v *Value) compareDate(value interface{}, inputs []Input, op ComparisonOper
 
 	valueTmp, err := inp.GetString(value)
 	if err != nil {
-		return false, errors.Wrap(err, CouldNotParseValueErr.Error())
+		return false, errors.Wrap(err, UnknownValueTypeErr.Error())
 	}
 
 	for _, inpValue := range inputs {
@@ -121,7 +121,7 @@ func (v *Value) compareDate(value interface{}, inputs []Input, op ComparisonOper
 		}
 		result = compare.BetweenDate(timeA, timeB, timeC)
 	default:
-
+		err = errors.WithStack(UnknownComparisonOperatorErr)
 	}
 	return result, err
 }
@@ -134,7 +134,7 @@ func (v *Value) compareFloat64(value interface{}, inputs []Input, op ComparisonO
 
 	valueTmp, err := inp.GetFloat64(value)
 	if err != nil {
-		return result, errors.Wrap(err, CouldNotParseValueErr.Error())
+		return result, errors.Wrap(err, UnknownValueTypeErr.Error())
 	}
 
 	for _, inpValue := range inputs {
@@ -159,7 +159,7 @@ func (v *Value) compareFloat64(value interface{}, inputs []Input, op ComparisonO
 	case BETWEEN:
 		result = compare.BetweenFloat64(valueTmp, input[0])
 	default:
-
+		err = errors.WithStack(UnknownComparisonOperatorErr)
 	}
 	return result, err
 }
@@ -208,18 +208,19 @@ func (v *Value) Calc(value []interface{}, valueType ValueType, inputs []Input, o
 				return result, errors.WithStack(err)
 			}
 		default:
-			return result, errors.WithStack(UnknownValueTypeErr)
+			err = errors.WithStack(UnknownValueTypeErr)
 		}
 		result = append(result, temp)
 	}
 
-	return result, nil
+	return result, err
 }
 
 // 计算时间
 func (v *Value) calcTime(value interface{}, input Input, op ArithmeticOperator) (string, error) {
 	var result string
 	var timeTemp time.Time
+	var err error
 
 	temp, err := inp.GetString(value)
 	if err != nil {
@@ -242,9 +243,9 @@ func (v *Value) calcTime(value interface{}, input Input, op ArithmeticOperator) 
 	case SUB:
 		result = operator.SubTime(timeTemp, inputTemp).Format(TimeFormat)
 	default:
-		return result, errors.WithStack(UnknownArithmeticOperatorErr)
+		err = UnknownArithmeticOperatorErr
 	}
-	return result, nil
+	return result, err
 }
 
 // 计算float
@@ -273,7 +274,7 @@ func (v *Value) calcFloat64(value interface{}, input Input, op ArithmeticOperato
 	case Per:
 		result = operator.Percent(valueTmp, inputTemp)
 	default:
-		return result, errors.WithStack(UnknownArithmeticOperatorErr)
+		err = UnknownArithmeticOperatorErr
 	}
-	return result, nil
+	return result, err
 }

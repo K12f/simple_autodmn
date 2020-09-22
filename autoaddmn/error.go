@@ -13,6 +13,7 @@ var (
 	UnknownLogicOperatorErr      = errors.New("未知的逻辑运算符")
 	UnknownArithmeticOperatorErr = errors.New("未知的算数运算符")
 	UnknownValueTypeErr          = errors.New("未知的值类型")
+	UnknownComparisonOperatorErr = errors.New("未知的比较操作符")
 
 	// 解析 rule
 	NotFoundRuleComponentsErr      = errors.New("未发现广告规则组件数据")
@@ -34,8 +35,7 @@ var (
 	CouldNotParseInputErr           = errors.New("解析失败:不能获取到值")
 
 	//value
-	CouldNotParseValueErr = errors.New("不能解析值类型")
-	CouldNotFindValueErr  = errors.New("值不能为空")
+	CouldNotFindValueErr = errors.New("值不能为空")
 
 	//compare
 	CouldNullValueError = errors.New("比较的值不能为空")
