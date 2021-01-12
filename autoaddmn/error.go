@@ -1,7 +1,6 @@
 package autoaddmn
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
 )
 
@@ -29,15 +28,11 @@ var (
 	CouldNotFindParseDecisionsErr = errors.New("没有发现解析决策")
 	CouldNotFindParseOrdersErr    = errors.New("没有发现解析指令")
 	//compare
-
-	CouldNotCompareDateNotParamsErr = fmt.Errorf("不能比较时间:%w", ParamsErr)
-	CouldNotCompareParseErr         = errors.New("解析失败")
-	CouldNotParseInputErr           = errors.New("解析失败:不能获取到值")
+	CouldNotParseInputErr = errors.New("解析失败:不能获取到值")
 
 	//value
 	CouldNotFindValueErr = errors.New("值不能为空")
 
 	//compare
-	CouldNullValueError = errors.New("比较的值不能为空")
 	CouldOutOfRangeFor2 = errors.New("比较值的长度不能大于2")
 )
