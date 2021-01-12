@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gogf/gf/os/glog"
 	"github.com/pkg/errors"
+	"time"
 )
 
 var (
@@ -11,10 +12,10 @@ var (
 	Version = "0.0.1"
 )
 
-//func init() {
-//	fmt.Printf("%s \n 版本:%s \n 时间:%s", Name, Version, time.Now().Format(TimeFormat))
-//	fmt.Println("----------------------------")
-//}
+func init() {
+	fmt.Printf("%s \n 版本:%s \n 时间:%s", Name, Version, time.Now().Format(TimeFormat))
+	fmt.Println("----------------------------")
+}
 
 // dmn 核心，对外暴露
 type Kernel struct {
